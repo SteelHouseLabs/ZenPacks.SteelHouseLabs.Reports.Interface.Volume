@@ -1,0 +1,150 @@
+<tal:block tal:define="
+    tableName string: interfacevolume;
+    sts python:here.ZenTableManager.setReqTableState;
+    zem python:here.dmd.ZenEventManager;
+    tm here/ZenTableManager;
+    tableState python:tm.getTableState(tableName, sortedSence='desc', sortedHeader='volTotal');
+    startDate python:sts(tableName, 'startDate', zem.defaultAvailabilityStart());
+    endDate python:sts(tableName, 'endDate', zem.defaultAvailabilityEnd());
+    deviceClass python:sts(tableName, 'deviceClass', '/Network');
+    deviceFilter python:sts(tableName, 'deviceFilter', '');
+    objects python:here.ReportServer.plugin('interface_volume', tableState);
+    objects python: (hasattr(request, 'doExport') and list(objects)) or objects;
+    exportFields python:['device', 'id' ,'speed', 'description', 'volIn',
+    'volAveIn', 'volOut', 'volAveOut', 'volTotal'];
+    batch python:here.ZenTableManager.getBatch(tableName,objects,sortedHeader='volTotal', sortedSence='desc');
+">
+
+<tal:block metal:use-macro="here/reportMacros/macros/exportableReport">
+<tal:block metal:fill-slot="report">
+
+<tal:block metal:use-macro="here/templates/macros/page1">
+<tal:block metal:fill-slot="breadCrumbPane">
+    <span metal:use-macro="here/miscmacros/macros/reportBreadCrumbsList"/>    
+</tal:block>
+<tal:block metal:fill-slot="contentPane">
+
+    <script type="text/javascript" 
+            src="/zport/portal_skins/zenmodel/datePicker.js">
+    </script>
+
+<form method="POST" tal:attributes="action request/URL; name string:deviceList"
+			tal:define="tabletitle string:Interface Volume Performance Report;
+                        showfilterbox python:True;
+			tblcolspan string:7">
+    
+
+        <tal:block tal:define=" tabletitle string:; showfilterbox python:False">
+        <tal:block metal:use-macro="here/zenuimacros/macros/zentable">
+
+        <tal:block metal:fill-slot="zentablecontents">
+        <!-- BEGIN TABLE CONTENTS -->
+            
+      <tr>
+        <td class="tableheader">Device Class:</td>
+        <td class="tablevalues">
+	  <select class="tablevalues" name="deviceClass"
+                tal:define="
+		orgs python:here.getDmdRoot('Devices').getOrganizerNames();
+                ">
+             <option tal:repeat="org orgs" 
+                     tal:attributes="value org;selected python:org==deviceClass"
+                     tal:content="org"/>
+          </select>
+        </td>
+        <td class="tableheader">Device Filter:</td>
+        <td class="tablevalues">
+           <input class="tablevalues" name="deviceFilter"
+                  tal:attributes="value deviceFilter"/>
+        </td>
+      </tr><tr>
+        <td class="tableheader">Start Date:</td>
+        <td class="tablevalues">
+           <input class="tablevalues" name="startDate" readonly="true" 
+                  tal:attributes="value startDate"/>
+           <input class="tablevalues" type="button" value="select"
+                  onclick="displayDatePicker('startDate');"/>
+        </td>
+        <td class="tableheader">End Date:</td>
+        <td class="tablevalues">
+           <input class="tablevalues" name="endDate" readonly="true" 
+                  tal:attributes="value endDate"/>
+           <input class="tablevalues" type="button" value="select"
+                  onclick="displayDatePicker('endDate');"/>
+        </td>
+      </tr><tr>
+        <td class="tablevalues" colspan="6">
+          <input class="tablevalues" type="Submit" value="Update"/>
+        </td> 
+      </tr>
+    
+        <!-- END TABLE CONTENTS -->
+
+        </tal:block>
+        </tal:block>
+        </tal:block>
+        
+
+
+
+<tal:block metal:use-macro="here/zenuimacros/macros/zentable">
+<tal:block metal:fill-slot="zentablecontents">
+
+    <tr>
+        <th rowspan="2" tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'device','Device')"/>
+        <th rowspan="2" tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'id','Interface')"/>
+        <th rowspan="2" tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'description','Description')"/>
+        <th rowspan="2" tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'speed','Speed')"/>
+
+        <td tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'volIn','Input Volume')"/>
+        <td tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'volAveIn','Input Volume/' + getattr(here.getDmdRoot('Devices'), 'zPerfReportableAvePeriodName', 'day'))"/>
+
+        <td tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'volOut','Output Volume')"/>
+        <td tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'volAveOut','Output Volume/' + getattr(here.getDmdRoot('Devices'), 'zPerfReportableAvePeriodName', 'day'))"/>
+
+        <td tal:replace="structure python:here.ZenTableManager.getTableHeader(
+                            tableName,'volTotal','Total')"/>
+    </tr>
+    <tal:block tal:repeat="r batch">
+        <tr tal:define="odd repeat/r/odd"
+            tal:attributes="class python:test(odd,'odd','even')">
+           <td><a tal:attributes="href r/devicePath"
+                  tal:content="r/device"/></td>
+           <td><a tal:attributes="href r/path"
+                  tal:content="r/id"/></td>
+	       <td tal:content="python: r.description"/>
+           <td tal:content="python: r.humanBits(r.speed, 1)"/>
+
+           <td tal:content="python: r.humanBytes(r.volIn)"/>
+           <td tal:content="python: r.humanBytes(r.volAveIn)"/>
+
+           <td tal:content="python: r.humanBytes(r.volOut)"/>
+           <td tal:content="python: r.humanBytes(r.volAveOut)"/>
+           <td tal:content="python: r.humanBytes(r.volTotal)"/>
+        </tr>
+    </tal:block>
+    <tr>
+        <td colspan="11" class="tableheader" align='center'>
+        <form metal:use-macro="here/zenTableNavigation/macros/navtool"/>
+        </td>
+    </tr>
+</tal:block>
+</tal:block>
+</form>
+<script type="text/javascript">
+    addDateRange('startDate', 'endDate');
+</script>
+</tal:block>
+</tal:block>
+</tal:block>
+
+</tal:block>
+</tal:block>

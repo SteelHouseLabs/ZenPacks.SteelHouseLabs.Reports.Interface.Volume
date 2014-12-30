@@ -1,0 +1,3 @@
+[zenoss.zenpacks]
+ZenPacks.SteelHouseLabs.Reports.Interface.Volume = ZenPacks.SteelHouseLabs.Reports.Interface.Volume
+
